@@ -8,8 +8,8 @@ gradlew build fatJar
 java -jar <your_bundled_app>.jar <input_origin_file_path> <input_other_sample_file_path> <id_of_target_element_that_needs_to_be_found>
 ##### Execution example:
 java -jar ./build/libs/smart-xml-analyzer-1.0-SNAPSHOT.jar ./samples/sample-0-origin.html ./samples/sample-4-the-mash.html make-everything-ok-button
-#####Comparison output for sample pages:
-###### input_origin_file_path = ./samples/sample-0-origin.html 
+##### Comparison output for sample pages:
+__input_origin_file_path = ./samples/sample-0-origin.html__
 - input_other_sample_file_path = ./samples/sample-1-evil-gemini.html \
 
 [INFO] 2019-03-10 20:35:07,285 c.a.SmartXmlAnalyzer - Element: <a class="btn btn-success" href="#check-and-ok" title="Make-Button" rel="done" onclick="javascript:window.okDone(); return false;"></a>
