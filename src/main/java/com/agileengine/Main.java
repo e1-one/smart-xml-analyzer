@@ -17,33 +17,34 @@ public class Main {
 
     private static Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    //>java -cp <your_bundled_app>.jar <input_origin_file_path> <input_other_sample_file_path>
     public static void main(String[] args) {
         //todo add additional checks
         String inputOriginFilePath = args[0];
-        if(inputOriginFilePath==null || inputOriginFilePath.length()==0){
-            throw new IllegalArgumentException(" Third param is not valid. Please specify targetId.");
-        }
         File originFile = new File(inputOriginFilePath);
         if(!originFile.exists()){
             throw new IllegalArgumentException(" First param is not valid. File not exists: " + originFile);
         }
 
-        String inputOtherSampleFilePath = "./samples/sample-1-evil-gemini.html";//args[1];
+        String inputOtherSampleFilePath = args[1];
         File otherFile = new File(inputOtherSampleFilePath);
         if(!otherFile.exists()){
             throw new IllegalArgumentException(" Second param is not valid. File not exists: " + inputOtherSampleFilePath);
         }
 
         String targetId = args[2];
+        if(targetId==null || targetId.length()==0){
+            throw new IllegalArgumentException(" Third param is not valid. Please specify targetId.");
+        }
 
-        Optional<Element> elementById = JsoupFindByIdSnippet.findElementById(originFile, targetId);
-        //elementById.get().val();
-        Attributes attributes = elementById.get().attributes();
+        Optional<Element> targetElementById = JsoupFindByIdSnippet.findElementById(originFile, targetId);
+        if(!targetElementById.isPresent()){
+            LOGGER.info("Target element is not present in the origin html");
+        }
+        Attributes targetElementAttributes = targetElementById.get().attributes();
 
-        //todo also make checking of child nodes
+        //todo also check child nodes
         HashMap<String, Elements> elementsByAttributes = new HashMap<>();
-        attributes.asList().stream().forEach(a -> {
+        targetElementAttributes.asList().stream().forEach(a -> {
             String cssQuery = "["+a.getKey()+"=\""+a.getValue()+"\"]";
             Optional<Elements> elements = JsoupCssSelectSnippet.findElementsByQuery(otherFile, cssQuery);
             if(elements.isPresent()) {
@@ -51,21 +52,20 @@ public class Main {
             }
         });
 
-        List<ElementMapReady> matchedElementsInOneRow = new LinkedList<>();
+        List<ElementMapReady> allMatchedElementsInOneRow = new LinkedList<>();
         elementsByAttributes.entrySet().forEach(entry -> {
             Elements elements = entry.getValue();
             elements.forEach(e -> {
-                matchedElementsInOneRow.add(new ElementMapReady(e));
+                allMatchedElementsInOneRow.add(new ElementMapReady(e));
             });
         });
 
-        ElementMapReady element = matchedElementsInOneRow.get(0);
-        //element.equals(element)
-        Map<ElementMapReady, Long> counters = matchedElementsInOneRow.stream()
+        Map<ElementMapReady, Long> elementsCounted = allMatchedElementsInOneRow.stream()
                 .collect(Collectors.groupingBy(e -> e,
                         Collectors.counting()));
-        Optional<Long> first = counters.values().stream().sorted(Comparator.reverseOrder()).findFirst();
-        Set<ElementMapReady> keysByValue = getKeysByValue(counters, first.get());
+
+        Optional<Long> first = elementsCounted.values().stream().sorted(Comparator.reverseOrder()).findFirst();
+        Set<ElementMapReady> keysByValue = getKeysByValue(elementsCounted, first.get());
 
         String pathToElement = printPathToElement(keysByValue.stream().findFirst().get());
         LOGGER.info("XML path to the element: " + pathToElement);
